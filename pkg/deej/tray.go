@@ -3,8 +3,8 @@ package deej
 import (
 	"fyne.io/systray"
 
-	"github.com/mattrcole/deej/pkg/deej/icon"
-	"github.com/mattrcole/deej/pkg/deej/util"
+	"github.com/MattRCole/deej/pkg/deej/icon"
+	"github.com/MattRCole/deej/pkg/deej/util"
 )
 
 func (d *Deej) initializeTray(onDone func()) {
