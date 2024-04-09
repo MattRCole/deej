@@ -1,4 +1,4 @@
-module github.com/MattRCole/deej
+module github.com/mattrcole/deej
 
 go 1.14
 
