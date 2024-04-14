@@ -6,11 +6,12 @@
 // CONSTANTS
 const int NUM_SLIDERS = 5;
 
-const char WIFI_HOSTNAME[] = "deej";
 const char WIFI_SSID[] = "EXAMPLE";
 const char WIFI_PASSWORD[] = "EXAMPLE";
 
 const char WS_ENDPOINT[] = "/ws";
+const char WS_HOSTNAME[] = "deej";
+const uint WS_PORT = 80;
 const unsigned int WS_MIN_PUBLISH_TIME = 50; // 50ms
 const unsigned int WS_CLEANUP_INTERVAL = 1000; // 1s
 
@@ -24,7 +25,7 @@ unsigned long lastPublishTime = 0;
 unsigned long lastClientCleanup = 0;
 
 WiFiClient wifiClient;
-AsyncWebServer webServer(80);
+AsyncWebServer webServer(WS_PORT);
 AsyncWebSocket webSocket(WS_ENDPOINT);
 
 // FNS
@@ -72,9 +73,9 @@ void setup()
     Serial.printf("Failed to start mdns! Error: %s\r\n", esp_err_to_name(err));
     esp_restart();
   }
-  mdns_hostname_set("deej");
+  mdns_hostname_set(WS_HOSTNAME);
   mdns_instance_name_set("Deej application audio controller");
-  // WiFi.setHostname(WIFI_HOSTNAME);
+  WiFi.setHostname(WS_HOSTNAME);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   unsigned int count = 0;
   while (WiFi.status() != WL_CONNECTED)

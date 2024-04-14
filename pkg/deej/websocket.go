@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/MattRCole/deej/pkg/deej/util"
 	"github.com/gorilla/websocket"
@@ -55,7 +56,7 @@ func NewWebSocket(deej *Deej, logger *zap.SugaredLogger) (*WebSocket, error) {
 
 	logger.Debug("Created websocket instance")
 
-	// ws.setupOnConfigReload()
+	ws.setupOnConfigReload()
 
 	return ws, nil
 }
@@ -68,7 +69,9 @@ func (ws *WebSocket) Start() error {
 		return errors.New("websocket: connection already active")
 	}
 
-	u := url.URL{Scheme: "ws", Host: "deej.local:80", Path: "/ws"}
+	host := ws.deej.config.Host + ":" + strconv.Itoa(ws.deej.config.Port)
+
+	u := url.URL{Scheme: "ws", Host: host, Path: "/ws"}
 	ws.connUrl = u.String()
 
 	ws.logger.Debugw("Attempting ws connection",
@@ -123,48 +126,48 @@ func (ws *WebSocket) SubscribeToSliderMoveEvents() chan SliderMoveEvent {
 	return ch
 }
 
-// func (ws *WebSocket) setupOnConfigReload() {
-// 	configReloadedChannel := ws.deej.config.SubscribeToChanges()
-//
-// 	const stopDelay = 50 * time.Millisecond
-//
-// 	go func() {
-// 		for {
-// 			select {
-// 			case <-configReloadedChannel:
-//
-// 				// make any config reload unset our slider number to ensure process volumes are being re-set
-// 				// (the next read line will emit SliderMoveEvent instances for all sliders)\
-// 				// this needs to happen after a small delay, because the session map will also re-acquire sessions
-// 				// whenever the config file is reloaded, and we don't want it to receive these move events while the map
-// 				// is still cleared. this is kind of ugly, but shouldn't cause any issues
-// 				go func() {
-// 					<-time.After(stopDelay)
-// 					ws.lastKnownNumSliders = 0
-// 				}()
-//
-// 				newAddr := flag.String()
-// 				maybeNewUrl =
-// 				// if connection params have changed, attempt to stop and start the connection
-// 				if ws.deej.config.ConnectionInfo.COMPort != ws.connOptions.PortName ||
-// 					uint(ws.deej.config.ConnectionInfo.BaudRate) != sio.connOptions.BaudRate {
-//
-// 					sio.logger.Info("Detected change in connection parameters, attempting to renew connection")
-// 					sio.Stop()
-//
-// 					// let the connection close
-// 					<-time.After(stopDelay)
-//
-// 					if err := sio.Start(); err != nil {
-// 						sio.logger.Warnw("Failed to renew connection after parameter change", "error", err)
-// 					} else {
-// 						sio.logger.Debug("Renewed connection successfully")
-// 					}
-// 				}
-// 			}
-// 		}
-// 	}()
-// }
+func (ws *WebSocket) setupOnConfigReload() {
+	configReloadedChannel := ws.deej.config.SubscribeToChanges()
+
+	const stopDelay = 50 * time.Millisecond
+
+	go func() {
+		for range configReloadedChannel {
+			ws.logger.Debug("Reloading config for websockets")
+
+			// make any config reload unset our slider number to ensure process volumes are being re-set
+			// (the next read line will emit SliderMoveEvent instances for all sliders)\
+			// this needs to happen after a small delay, because the session map will also re-acquire sessions
+			// whenever the config file is reloaded, and we don't want it to receive these move events while the map
+			// is still cleared. this is kind of ugly, but shouldn't cause any issues
+			go func() {
+				<-time.After(stopDelay)
+				ws.lastKnownNumSliders = 0
+			}()
+
+			maybeNewHost := ws.deej.config.Host
+			maybeNewPort := ws.deej.config.Port
+			host := maybeNewHost + ":" + strconv.Itoa(maybeNewPort)
+
+			u := url.URL{Scheme: "ws", Host: host, Path: "/ws"}
+			// if connection host has changed, attempt to stop and start the connection
+			if u.String() != ws.connUrl {
+
+				ws.logger.Info("Detected change in host, attempting to renew connection")
+				ws.Stop()
+
+				// let the connection close
+				<-time.After(stopDelay)
+
+				if err := ws.Start(); err != nil {
+					ws.logger.Warnw("Failed to renew connection after parameter change", "error", err)
+				} else {
+					ws.logger.Debug("Renewed connection successfully")
+				}
+			}
+		}
+	}()
+}
 
 func (ws *WebSocket) close(logger *zap.SugaredLogger) {
 	logger.Debug("Closing Time!!!!")
@@ -205,16 +208,13 @@ func (ws *WebSocket) readLine(logger *zap.SugaredLogger, conn *websocket.Conn) c
 func (ws *WebSocket) handleLine(logger *zap.SugaredLogger, line string) {
 	logger.Debugf("Handling line: %s", line)
 
-	// this function receives an unsanitized line which is guaranteed to end with LF,
-	// but most lines will end with CRLF. it may also have garbage instead of
-	// deej-formatted values, so we must check for that! just ignore bad ones
+	// Make sure the line isn't malformed somehow
+	// Websockets are less likely to have malformed data, so this check may not be necessary
+	// but it won't hurt to have it
 	if !expectedLinePatternWS.MatchString(line) {
 		logger.Debugf("Unexpected line: %s", line)
 		return
 	}
-
-	// trim the suffix
-	// line = strings.TrimSuffix(line, "\r\n")
 
 	// split on pipe (|), this gives a slice of numerical strings between "0" and "1023"
 	splitLine := strings.Split(line, "|")

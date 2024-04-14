@@ -21,6 +21,9 @@ slider_max_val: 4095
 # set this to true if you want the controls inverted (i.e. top is 0%, bottom is 100%)
 invert_sliders: false
 
+wifi_host: deej.local
+wifi_port: 80
+
 # settings for connecting to the arduino board
 com_port: /dev/ttyACM0
 baud_rate: 9600

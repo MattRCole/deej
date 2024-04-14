@@ -29,6 +29,9 @@ type CanonicalConfig struct {
 	SliderMinimumValue  int
 	SliderMaximumValue  int
 
+	Host string
+	Port int
+
 	logger             *zap.SugaredLogger
 	notifier           Notifier
 	stopWatcherChannel chan bool
@@ -57,11 +60,15 @@ const (
 	configKeyCOMPort             = "com_port"
 	configKeyBaudRate            = "baud_rate"
 	configKeyNoiseReductionLevel = "noise_reduction"
+	configKeyHost                = "wifi_host"
+	configKeyPort                = "wifi_port"
 
 	defaultCOMPort        = "COM4"
 	defaultBaudRate       = 9600
 	defaultSliderMinValue = 0
 	defaultSliderMaxValue = 1023
+	defaultHost           = "deej.local"
+	defaultPort           = 80
 )
 
 // has to be defined as a non-constant because we're using path.Join
@@ -97,6 +104,8 @@ func NewConfig(logger *zap.SugaredLogger, notifier Notifier) (*CanonicalConfig, 
 	userConfig.SetDefault(configKeyInvertSliders, false)
 	userConfig.SetDefault(configKeyCOMPort, defaultCOMPort)
 	userConfig.SetDefault(configKeyBaudRate, defaultBaudRate)
+	userConfig.SetDefault(configKeyHost, defaultHost)
+	userConfig.SetDefault(configKeyPort, defaultPort)
 
 	internalConfig := viper.New()
 	internalConfig.SetConfigName(internalConfigName)
@@ -158,6 +167,9 @@ func (cc *CanonicalConfig) Load() error {
 	cc.logger.Infow("Config values (cont)",
 		"SliderMinimumValue", cc.SliderMinimumValue,
 		"SliderMaximumValue", cc.SliderMaximumValue)
+	cc.logger.Infow("Websockets values",
+		"Host", cc.Host,
+		"Port", cc.Port)
 
 	return nil
 }
@@ -251,6 +263,8 @@ func (cc *CanonicalConfig) populateFromVipers() error {
 	cc.NoiseReductionLevel = cc.userConfig.GetString(configKeyNoiseReductionLevel)
 	cc.SliderMinimumValue = cc.userConfig.GetInt(configKeySliderMinValue)
 	cc.SliderMaximumValue = cc.userConfig.GetInt(configKeySliderMaxValue)
+	cc.Host = cc.userConfig.GetString(configKeyHost)
+	cc.Port = cc.userConfig.GetInt(configKeyPort)
 
 	cc.logger.Debug("Populated config fields from vipers")
 
