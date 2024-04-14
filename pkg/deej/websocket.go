@@ -16,10 +16,10 @@ import (
 )
 
 type WebSocket struct {
-	hostName string
-	hostPort int
-	deej     *Deej
-	logger   *zap.SugaredLogger
+	// hostName string
+	// hostPort int
+	deej   *Deej
+	logger *zap.SugaredLogger
 
 	connected bool
 	conn      *websocket.Conn
@@ -28,15 +28,14 @@ type WebSocket struct {
 	stopChannel                chan bool
 	lastKnownNumSliders        int
 	currentSliderPercentValues []float32
-	sliderMoveConsumers        []chan SliderMoveEventWS
+	sliderMoveConsumers        []chan SliderMoveEvent
 }
 
-type SliderMoveEventWS struct {
-	SliderID     int
-	PercentValue float32
-}
-
-var wsExpectedLinePattern = regexp.MustCompile(`^\d{1,4}(\|\d{1,4})*\r\n$`)
+// type SliderMoveEvent struct {
+// 	SliderID     int
+// 	PercentValue float32
+// }
+var expectedLinePatternWS = regexp.MustCompile(`^\d{1,4}(\|\d{1,4})*$`)
 
 func NewWebSocket(deej *Deej, logger *zap.SugaredLogger) (*WebSocket, error) {
 	// var addr = flag.String("addr", "deej.local:80", "http address of deej")
@@ -50,7 +49,8 @@ func NewWebSocket(deej *Deej, logger *zap.SugaredLogger) (*WebSocket, error) {
 		// connUrl: u.String(),
 		conn:                nil,
 		connected:           false,
-		sliderMoveConsumers: []chan SliderMoveEventWS{},
+		sliderMoveConsumers: []chan SliderMoveEvent{},
+		stopChannel:         make(chan bool),
 	}
 
 	logger.Debug("Created websocket instance")
@@ -116,8 +116,8 @@ func (ws *WebSocket) Stop() {
 	}
 }
 
-func (ws *WebSocket) SubscribeToSliderMoveEvents() chan SliderMoveEventWS {
-	ch := make(chan SliderMoveEventWS)
+func (ws *WebSocket) SubscribeToSliderMoveEvents() chan SliderMoveEvent {
+	ch := make(chan SliderMoveEvent)
 	ws.sliderMoveConsumers = append(ws.sliderMoveConsumers, ch)
 
 	return ch
@@ -167,7 +167,11 @@ func (ws *WebSocket) SubscribeToSliderMoveEvents() chan SliderMoveEventWS {
 // }
 
 func (ws *WebSocket) close(logger *zap.SugaredLogger) {
-	if err := ws.conn.Close(); err != nil {
+	logger.Debug("Closing Time!!!!")
+
+	err := ws.conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
+
+	if err != nil {
 		logger.Warnw("Failed to close websocket connection", "error", err)
 	} else {
 		logger.Debug("websocket connection closed")
@@ -186,9 +190,11 @@ func (ws *WebSocket) readLine(logger *zap.SugaredLogger, conn *websocket.Conn) c
 			if err != nil {
 				logger.Errorf("recieved: %s, message type: %d", message, mt)
 				ws.Stop()
-			} else if mt == 1 {
-				logger.Warn("Got a binary message, cannot read!")
+				return
+				// } else if mt == 1 {
+				// 	logger.Warn("Got a binary message, cannot read!")
 			} else {
+				logger.Debug("Got a message!")
 				ch <- string(message[:])
 			}
 		}
@@ -197,16 +203,18 @@ func (ws *WebSocket) readLine(logger *zap.SugaredLogger, conn *websocket.Conn) c
 }
 
 func (ws *WebSocket) handleLine(logger *zap.SugaredLogger, line string) {
+	logger.Debugf("Handling line: %s", line)
 
 	// this function receives an unsanitized line which is guaranteed to end with LF,
 	// but most lines will end with CRLF. it may also have garbage instead of
 	// deej-formatted values, so we must check for that! just ignore bad ones
-	if !expectedLinePattern.MatchString(line) {
+	if !expectedLinePatternWS.MatchString(line) {
+		logger.Debugf("Unexpected line: %s", line)
 		return
 	}
 
 	// trim the suffix
-	line = strings.TrimSuffix(line, "\r\n")
+	// line = strings.TrimSuffix(line, "\r\n")
 
 	// split on pipe (|), this gives a slice of numerical strings between "0" and "1023"
 	splitLine := strings.Split(line, "|")
@@ -227,7 +235,7 @@ func (ws *WebSocket) handleLine(logger *zap.SugaredLogger, line string) {
 	var maxValue int = ws.deej.config.SliderMaximumValue
 	var minValue int = ws.deej.config.SliderMinimumValue
 	// for each slider:
-	moveEvents := []SliderMoveEventWS{}
+	moveEvents := []SliderMoveEvent{}
 	for sliderIdx, stringValue := range splitLine {
 
 		// convert string values to integers ("1023" -> 1023)
@@ -258,7 +266,7 @@ func (ws *WebSocket) handleLine(logger *zap.SugaredLogger, line string) {
 			// if it does, update the saved value and create a move event
 			ws.currentSliderPercentValues[sliderIdx] = normalizedScalar
 
-			moveEvents = append(moveEvents, SliderMoveEventWS{
+			moveEvents = append(moveEvents, SliderMoveEvent{
 				SliderID:     sliderIdx,
 				PercentValue: normalizedScalar,
 			})

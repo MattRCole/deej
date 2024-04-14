@@ -23,7 +23,7 @@ type Deej struct {
 	logger   *zap.SugaredLogger
 	notifier Notifier
 	config   *CanonicalConfig
-	serial   *SerialIO
+	serial   *WebSocket
 	sessions *sessionMap
 
 	stopChannel chan bool
@@ -55,10 +55,10 @@ func NewDeej(logger *zap.SugaredLogger, verbose bool) (*Deej, error) {
 		verbose:     verbose,
 	}
 
-	serial, err := NewSerialIO(d, logger)
+	serial, err := NewWebSocket(d, logger)
 	if err != nil {
-		logger.Errorw("Failed to create SerialIO", "error", err)
-		return nil, fmt.Errorf("create new SerialIO: %w", err)
+		logger.Errorw("Failed to create WebSocket", "error", err)
+		return nil, fmt.Errorf("create new WebSocket: %w", err)
 	}
 
 	d.serial = serial
