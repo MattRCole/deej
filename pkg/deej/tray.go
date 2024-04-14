@@ -13,7 +13,7 @@ func (d *Deej) initializeTray(onDone func()) {
 	onReady := func() {
 		logger.Debug("Tray instance ready")
 
-		systray.SetTemplateIcon(icon.DeejLogo, icon.DeejLogo)
+		systray.SetIcon(icon.DeejLogo)
 		systray.SetTitle("deej")
 		systray.SetTooltip("deej")
 
@@ -49,7 +49,7 @@ func (d *Deej) initializeTray(onDone func()) {
 
 					editor := "notepad.exe"
 					if util.Linux() {
-						editor = "gedit"
+						editor = "codium"
 					}
 
 					if err := util.OpenExternal(logger, editor, userConfigFilepath); err != nil {

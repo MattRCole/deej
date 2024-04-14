@@ -26,6 +26,8 @@ type CanonicalConfig struct {
 	InvertSliders bool
 
 	NoiseReductionLevel string
+	SliderMinimumValue  int
+	SliderMaximumValue  int
 
 	logger             *zap.SugaredLogger
 	notifier           Notifier
@@ -49,13 +51,17 @@ const (
 	configType = "yaml"
 
 	configKeySliderMapping       = "slider_mapping"
+	configKeySliderMinValue      = "slider_min_val"
+	configKeySliderMaxValue      = "slider_max_val"
 	configKeyInvertSliders       = "invert_sliders"
 	configKeyCOMPort             = "com_port"
 	configKeyBaudRate            = "baud_rate"
 	configKeyNoiseReductionLevel = "noise_reduction"
 
-	defaultCOMPort  = "COM4"
-	defaultBaudRate = 9600
+	defaultCOMPort        = "COM4"
+	defaultBaudRate       = 9600
+	defaultSliderMinValue = 0
+	defaultSliderMaxValue = 1023
 )
 
 // has to be defined as a non-constant because we're using path.Join
@@ -86,6 +92,8 @@ func NewConfig(logger *zap.SugaredLogger, notifier Notifier) (*CanonicalConfig, 
 	userConfig.AddConfigPath(userConfigPath)
 
 	userConfig.SetDefault(configKeySliderMapping, map[string][]string{})
+	userConfig.SetDefault(configKeySliderMinValue, defaultSliderMinValue)
+	userConfig.SetDefault(configKeySliderMaxValue, defaultSliderMaxValue)
 	userConfig.SetDefault(configKeyInvertSliders, false)
 	userConfig.SetDefault(configKeyCOMPort, defaultCOMPort)
 	userConfig.SetDefault(configKeyBaudRate, defaultBaudRate)
@@ -147,6 +155,9 @@ func (cc *CanonicalConfig) Load() error {
 		"sliderMapping", cc.SliderMapping,
 		"connectionInfo", cc.ConnectionInfo,
 		"invertSliders", cc.InvertSliders)
+	cc.logger.Infow("Config values (cont)",
+		"SliderMinimumValue", cc.SliderMinimumValue,
+		"SliderMaximumValue", cc.SliderMaximumValue)
 
 	return nil
 }
@@ -238,6 +249,8 @@ func (cc *CanonicalConfig) populateFromVipers() error {
 
 	cc.InvertSliders = cc.userConfig.GetBool(configKeyInvertSliders)
 	cc.NoiseReductionLevel = cc.userConfig.GetString(configKeyNoiseReductionLevel)
+	cc.SliderMinimumValue = cc.userConfig.GetInt(configKeySliderMinValue)
+	cc.SliderMaximumValue = cc.userConfig.GetInt(configKeySliderMaxValue)
 
 	cc.logger.Debug("Populated config fields from vipers")
 
