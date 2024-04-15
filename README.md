@@ -1,5 +1,48 @@
 # deej
 
+## What's new in this fork?
+
+This fork of the `deej` project adds wireless support!
+
+There are some caveats:
+
+- This is meant for `ESP32` micro-controllers with WiFi capabilities
+- For certain versions of Windows (Windows 7 and below), you'll have to either use the IP address of the deej or install Apple's Bonjour service (AKA install iTunes)
+
+## How to Use
+
+There are a few differences between the original `deej` and this fork.
+
+### Building/uploading the arduino sketch
+
+Using Arduino's Library Manager, search for and install the following libraries:
+
+- `ESPAsyncTCP` by `Me-No-Dev`
+- `ESPAsyncWebSrv` by `Me-No-Dev`
+
+You'll need to update [the sketch](./arduino/deej-5-sliders-vanilla/deej-5-sliders-vanilla.ino) to include your WiFi's `SSID` (The name of your wifi) and `Password` (Lines 9 and 10)
+
+After you've done those two things, you should be good to upload the sketch to your `ESP32`.
+
+### Config
+
+There are two new config options:
+
+- `wifi_host`: This should match `WS_HOSTNAME` (line 13) in [the arduino sketch](./arduino/deej-5-sliders-vanilla/deej-5-sliders-vanilla.ino)
+- `wifi_port`: This should match `WS_PORT` (line 14) in [the arduino sketch](./arduino/deej-5-sliders-vanilla/deej-5-sliders-vanilla.ino)
+
+If you don't modify the `sketch` values, then you really shouldn't need to change these config options, but they're there just in case you want to have two wireless `deej` on the same network.
+
+## Stuff for nerds
+
+This solution uses a `websockets` server on the `esp32` as well as `mDNS` for host-name resolution (that way, users don't need to type in the `ip` address of their `deej`)
+
+### Why is the esp32 running the websocket server?
+
+Ease of use. You don't have to mess with firewall rules on windows (I think), also, since the computer is initiating the connection, the `deej` can simply use mDNS for easy configuration
+
+## Original Readme
+
 deej is an **open-source hardware volume mixer** for Windows and Linux PCs. It lets you use real-life sliders (like a DJ!) to **seamlessly control the volumes of different apps** (such as your music player, the game you're playing and your voice chat session) without having to stop what you're doing.
 
 **Join the [deej Discord server](https://discord.gg/nf88NJu) if you need help or have any questions!**
