@@ -1,0 +1,33 @@
+[[applicationCollection]]
+usage = ['Consumer', 'Consumer Control']
+
+    [[applicationCollection.inputReport]]
+    name = "DeejVolumeArray"
+
+        [[applicationCollection.inputReport.physicalCollection]]
+        usage = ['Sensors', 'Electrical: Potentiometer']
+
+            [[applicationCollection.inputReport.physicalCollection.variableItem]]
+            usage = ['Consumer', 'Volume']
+            sizeInBits = 10
+            logicalValueRange = 'maxUnsignedSizeRange'
+
+            [[applicationCollection.inputReport.physicalCollection.variableItem]]
+            usage = ['Consumer', 'Volume']
+            sizeInBits = 10
+            logicalValueRange = 'maxUnsignedSizeRange'
+
+            [[applicationCollection.inputReport.physicalCollection.variableItem]]
+            usage = ['Consumer', 'Volume']
+            sizeInBits = 10
+            logicalValueRange = 'maxUnsignedSizeRange'
+
+            [[applicationCollection.inputReport.physicalCollection.variableItem]]
+            usage = ['Consumer', 'Volume']
+            sizeInBits = 10
+            logicalValueRange = 'maxUnsignedSizeRange'
+
+            [[applicationCollection.inputReport.physicalCollection.variableItem]]
+            usage = ['Consumer', 'Volume']
+            sizeInBits = 10
+            logicalValueRange = 'maxUnsignedSizeRange'
