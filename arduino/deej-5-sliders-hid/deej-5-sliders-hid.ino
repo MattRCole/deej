@@ -1,20 +1,28 @@
+#define CFG_TUD_HID 1
 #include "deej-hid-definition.h"
-#include "hidgeneric.h"
-
+#include "hiddeej.h"
 // CONSTANTS
 const int NUM_SLIDERS = 5;
 
 const int analogInputs[NUM_SLIDERS] = {9, 10, 11, 12, 13};
-int analogSliderValues[NUM_SLIDERS];
-int oldAnalogSliderValues[NUM_SLIDERS];
+uint16_t analogSliderValues[NUM_SLIDERS];
+uint16_t oldAnalogSliderValues[NUM_SLIDERS];
 bool sliderChange[NUM_SLIDERS];
 unsigned long lastPublishTime = 0;
 unsigned long lastClientCleanup = 0;
 
+// GLOBALS
+char HIDDescription[] = "Deej volume control";
+
+HIDdeej hidDeej(10);
+
 // FNS
+
 
 void setup()
 {
+  Serial.begin(9600);
+  hidDeej.begin(HIDDescription);
 }
 
 bool shouldUpdateSliders()
@@ -65,6 +73,15 @@ void updateSliderValues()
 
 void sendSliderValues()
 {
+    size_t allSliderValues[NUM_SLIDERS] = {};
+    for (int i = 0; i < NUM_SLIDERS; i++) {
+        allSliderValues[i] = (size_t)analogSliderValues[i];
+        sliderChange[i] = false;
+    }
+
+    hidDeej.sendAll(allSliderValues);
+
+    return;
 }
 
 void printSliderValues()

@@ -9,25 +9,25 @@ usage = ['Consumer', 'Consumer Control']
 
             [[applicationCollection.inputReport.physicalCollection.variableItem]]
             usage = ['Consumer', 'Volume']
-            sizeInBits = 10
+            sizeInBits = 8
             logicalValueRange = 'maxUnsignedSizeRange'
 
             [[applicationCollection.inputReport.physicalCollection.variableItem]]
             usage = ['Consumer', 'Volume']
-            sizeInBits = 10
+            sizeInBits = 8
             logicalValueRange = 'maxUnsignedSizeRange'
 
             [[applicationCollection.inputReport.physicalCollection.variableItem]]
             usage = ['Consumer', 'Volume']
-            sizeInBits = 10
+            sizeInBits = 8
             logicalValueRange = 'maxUnsignedSizeRange'
 
             [[applicationCollection.inputReport.physicalCollection.variableItem]]
             usage = ['Consumer', 'Volume']
-            sizeInBits = 10
+            sizeInBits = 8
             logicalValueRange = 'maxUnsignedSizeRange'
 
             [[applicationCollection.inputReport.physicalCollection.variableItem]]
             usage = ['Consumer', 'Volume']
-            sizeInBits = 10
+            sizeInBits = 8
             logicalValueRange = 'maxUnsignedSizeRange'
