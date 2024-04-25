@@ -53,12 +53,12 @@ private:
   uint32_t           _delay_ms = 7;
   void delay_ms(uint64_t ms);
 
-  uint16_t vid       = 0x05ac;
-  uint16_t pid       = 0x820a;
-  uint16_t version   = 0x0210;
+  uint16_t vid       = 0x2341;
+  uint16_t pid       = 0x0dee;
+  uint16_t version   = 0x0001;
 
 public:
-  BleDeej(std::string deviceName = "ESP32 Deej", std::string deviceManufacturer = "Espressif", uint8_t batteryLevel = 100);
+  BleDeej(std::string deviceName = "Deej", std::string deviceManufacturer = "DIY", uint8_t batteryLevel = 100);
   void begin(void);
   void end(void);
   void sendReport(DeejVolumeArray* sliders);

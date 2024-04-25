@@ -23,7 +23,7 @@ type Deej struct {
 	logger   *zap.SugaredLogger
 	notifier Notifier
 	config   *CanonicalConfig
-	serial   *WebSocket
+	serial   *HIDeej
 	sessions *sessionMap
 
 	stopChannel chan bool
@@ -55,7 +55,7 @@ func NewDeej(logger *zap.SugaredLogger, verbose bool) (*Deej, error) {
 		verbose:     verbose,
 	}
 
-	serial, err := NewWebSocket(d, logger)
+	serial, err := NewHIDeej(d, logger)
 	if err != nil {
 		logger.Errorw("Failed to create WebSocket", "error", err)
 		return nil, fmt.Errorf("create new WebSocket: %w", err)
