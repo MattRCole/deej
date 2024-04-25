@@ -9,7 +9,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/MattRCole/deej/pkg/deej/util"
+	"github.com/mattrcole/deej/pkg/deej/util"
 )
 
 const (

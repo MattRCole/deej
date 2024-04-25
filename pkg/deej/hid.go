@@ -3,10 +3,9 @@ package deej
 import (
 	"errors"
 	"math"
-	"time"
 
-	"github.com/MattRCole/deej/pkg/deej/util"
-	"github.com/sstallion/go-hid"
+	"github.com/karalabe/hid"
+	"github.com/mattrcole/deej/pkg/deej/util"
 	"go.uber.org/zap"
 )
 
@@ -26,8 +25,8 @@ type HIDeej struct {
 }
 
 const (
-	vendorId             = 0x2341
-	productId            = 0x0dee
+	vendorId             = uint16(0x2341)
+	productId            = uint16(0x0dee)
 	volumeSliderReportId = 0x01
 )
 
@@ -49,26 +48,65 @@ func NewHIDeej(deej *Deej, logger *zap.SugaredLogger) (*HIDeej, error) {
 }
 
 func (hideej *HIDeej) Start() error {
-
 	// don't allow multiple concurrent connections
 	if hideej.connected {
 		hideej.logger.Warn("Already connected, can't start another without closing first")
 		return errors.New("hid: connection already active")
 	}
 
+	logger := hideej.logger.Named("hid-setup")
+
 	var err error
-	hideej.device, err = hid.OpenFirst(vendorId, productId)
+	if hid.Supported() == false {
+		logger.Warn("HID NOT SUPPORTED!!!")
+	}
+	availableDevices := hid.Enumerate(vendorId, productId)
+	if len(availableDevices) == 0 {
+		allDevices := hid.Enumerate(0, 0)
+		for _, info := range allDevices {
+			logger.Debugf("Available device:")
+			logger.Debugf("Vendor ID: 0x%04x, Product ID: 0x%04x", info.VendorID, info.ProductID)
+			logger.Debugf("Usage: 0x%04x", info.Usage)
+			logger.Debugf("Usage Page: 0x%04x", info.UsagePage)
+			logger.Debugf("Path: %s", info.Path)
+			logger.Debugf("Product: %s", info.Product)
+			logger.Debugf("Manufacturer: %s", info.Manufacturer)
+			logger.Debug("")
+		}
+		// enumFunc := func(info *hid.DeviceInfo) error {
+		// 	return nil
+		// }
+		// logger.Errorf("Could not open device. err: %w", err)
+		// hid.Enumerate(hid.VendorIDAny, hid.ProductIDAny, enumFunc)
+		return errors.New("No HID device found with correct vendor id and product id")
+	}
+	deviceInfo := availableDevices[0]
+	hideej.device, err = deviceInfo.Open()
 	if err != nil {
-		hideej.logger.Errorf("Could not open device. err: %w", err)
+		logger.Errorw("Could not open devie! err: %w", err)
 		return err
 	}
+	// if err != nil {
+	// 	enumFunc := func(info *hid.DeviceInfo) error {
+	// 		logger.Debugf("Available device:")
+	// 		logger.Debugf("Vendor ID: %x, Product ID: %x", info.VendorID, info.ProductID)
+	// 		logger.Debugf("Product String: %s", info.ProductStr)
+	// 		logger.Debugf("Usage Page: %x", info.UsagePage)
+	// 		logger.Debugf("Path: %s", info.Path)
+	// 		logger.Debug("")
+	// 		return nil
+	// 	}
+	// 	logger.Errorf("Could not open device. err: %w", err)
+	// 	hid.Enumerate(hid.VendorIDAny, hid.ProductIDAny, enumFunc)
+	// 	return err
+	// }
 	// We'll just sit there and poll I guess
-	hideej.device.SetNonblock(true)
+	// hideej.device.SetNonblock(true)
 
 	namedLogger := hideej.logger.Named("hid")
 
-	devInfo, r := hideej.device.GetDeviceInfo()
-	namedLogger.Infow("Connected", "device info", devInfo, "device info err", r)
+	// devInfo, r := hideej.device.GetDeviceInfo()
+	namedLogger.Infow("Connected", "device info", deviceInfo)
 	hideej.connected = true
 
 	// read lines or await a stop
@@ -89,12 +127,12 @@ func (hideej *HIDeej) Start() error {
 }
 
 func (hideej *HIDeej) Stop() {
-	// if hideej.connected {
-	// 	hideej.logger.Debug("Shutting down websocket connection")
-	// 	hideej.stopChannel <- true
-	// } else {
-	// 	hideej.logger.Debug("Not currently connected, nothing to stop")
-	// }
+	if hideej.connected {
+		hideej.logger.Debug("Shutting down websocket connection")
+		hideej.stopChannel <- true
+	} else {
+		hideej.logger.Debug("Not currently connected, nothing to stop")
+	}
 }
 
 func (hideej *HIDeej) SubscribeToSliderMoveEvents() chan SliderMoveEvent {
@@ -150,13 +188,14 @@ func (hideej *HIDeej) setupOnConfigReload() {
 func (hideej *HIDeej) close(logger *zap.SugaredLogger) {
 	// logger.Debug("Closing Time!!!!")
 
+	err := hideej.device.Close()
 	// err := hideej.conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 
-	// if err != nil {
-	// 	logger.Warnw("Failed to close websocket connection", "error", err)
-	// } else {
-	// 	logger.Debug("websocket connection closed")
-	// }
+	if err != nil {
+		logger.Warnw("Failed to close hid device", "error", err)
+	} else {
+		logger.Debug("hid device closed")
+	}
 
 	// hideej.conn = nil
 	hideej.connected = false
@@ -169,13 +208,10 @@ func (hideej *HIDeej) readReport(logger *zap.SugaredLogger, device *hid.Device) 
 		for {
 			var buffer [100]byte
 			bytes_read, err := device.Read(buffer[:])
-			if err != nil && err != hid.ErrTimeout {
+			if err != nil {
 				logger.Errorf("Error reading from hid device %w", err)
 				hideej.Stop()
 				return
-			} else if err == hid.ErrTimeout {
-				logger.Debug("Timed out, will wait for data")
-				time.Sleep(10 * time.Millisecond)
 			} else {
 				if buffer[0] != volumeSliderReportId {
 					logger.Warnf("Got unknown report: %x", buffer[0])
@@ -183,6 +219,20 @@ func (hideej *HIDeej) readReport(logger *zap.SugaredLogger, device *hid.Device) 
 				logger.Debug("Got a message!")
 				ch <- buffer[1:bytes_read]
 			}
+			// if err != nil && err != hid.ErrTimeout {
+			// 	logger.Errorf("Error reading from hid device %w", err)
+			// 	hideej.Stop()
+			// 	return
+			// } else if err == hid.ErrTimeout {
+			// 	logger.Debug("Timed out, will wait for data")
+			// 	time.Sleep(10 * time.Millisecond)
+			// } else {
+			// 	if buffer[0] != volumeSliderReportId {
+			// 		logger.Warnf("Got unknown report: %x", buffer[0])
+			// 	}
+			// 	logger.Debug("Got a message!")
+			// 	ch <- buffer[1:bytes_read]
+			// }
 		}
 	}()
 	return ch

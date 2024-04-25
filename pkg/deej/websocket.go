@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/MattRCole/deej/pkg/deej/util"
 	"github.com/gorilla/websocket"
+	"github.com/mattrcole/deej/pkg/deej/util"
 	"go.uber.org/zap"
 )
 
@@ -32,10 +32,10 @@ type WebSocket struct {
 	sliderMoveConsumers        []chan SliderMoveEvent
 }
 
-// type SliderMoveEvent struct {
-// 	SliderID     int
-// 	PercentValue float32
-// }
+//	type SliderMoveEvent struct {
+//		SliderID     int
+//		PercentValue float32
+//	}
 var expectedLinePatternWS = regexp.MustCompile(`^\d{1,4}(\|\d{1,4})*$`)
 
 func NewWebSocket(deej *Deej, logger *zap.SugaredLogger) (*WebSocket, error) {

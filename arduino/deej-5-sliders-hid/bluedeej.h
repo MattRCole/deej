@@ -1,9 +1,9 @@
 // HEAVILY INSPIRED BY: https://raw.githubusercontent.com/T-vK/ESP32-BLE-Keyboard/master/BleKeyboard.h
 
 // uncomment the following line to use NimBLE library
-#define USE_NIMBLE
 
 #pragma once
+#define USE_NIMBLE
 #include "sdkconfig.h"
 #include "deej-hid-definition.h"
 #if defined(CONFIG_BT_ENABLED)

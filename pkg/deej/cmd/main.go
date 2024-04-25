@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/MattRCole/deej/pkg/deej"
+	"github.com/mattrcole/deej/pkg/deej"
 )
 
 var (
@@ -28,6 +28,13 @@ func main() {
 	if err != nil {
 		panic(fmt.Sprintf("Failed to create logger: %v", err))
 	}
+	// herr := hid.Init()
+
+	// if herr != nil {
+	// 	logger.Fatalw("Failed to start HID package! Err: %w", herr)
+	// }
+
+	// defer hid.Exit()
 
 	named := logger.Named("main")
 	named.Debug("Created logger")
